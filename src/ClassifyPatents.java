@@ -1,25 +1,15 @@
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Scanner;
-import java.util.Set;
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 
 import org.mariadb.jdbc.Driver;
 
-import com.fasterxml.jackson.core.JsonParseException;
 
-// Author: Ronnie Ward
+// Author: Ronnie Ward and Josiah Coad
 
 public class ClassifyPatents {
     
@@ -39,16 +29,12 @@ public class ClassifyPatents {
 		List<String> yesDBList = new ArrayList<String>();
 		List<String> noDBList = new ArrayList<String>();
 		Statement s = conn.createStatement();
-		ResultSet rs;
+		
 		for (int i : knownDByes){
-			rs = s.executeQuery("SELECT title FROM Patents WHERE idx = " + (i - 1));
-			rs.first();
-			yesDBList.add(rs.getString("title"));
+			yesDBList.add(getTitle(s, i));
 		}
 		for (int i : knownDBno){
-			rs = s.executeQuery("SELECT title FROM Patents WHERE idx = " + (i - 1));
-			rs.first();
-			noDBList.add(rs.getString("title"));
+			noDBList.add(getTitle(s, i));
 		}
 		
         // get a classifier
@@ -57,22 +43,27 @@ public class ClassifyPatents {
         // train the classifier
         c.train(yesDBList, noDBList);
 
-        //read index of desired start patent    
+        //read index of desired start patent
         while(true){
             System.out.println("Enter patent start number: ");
-            Scanner input = new Scanner(System.in);
+            @SuppressWarnings("resource")
+			Scanner input = new Scanner(System.in);
             String inputLine = input.nextLine();
             int pn = Integer.parseInt(inputLine.trim());
             
             for (int i = pn; i < 1000; i++){
-                String patent = pdf.getPatent(i);
-                double pr = c.classify(patent);
-                PatentParser pp = new PatentParser(patent);
-                System.out.println("Patent index:"+i+"\t"+"Class: "+pr+"\t"+pp.findFieldValue("title"));
+                String title = getTitle(s, i);
+                double pr = c.classify(title);
+                System.out.println("Patent index:"+i+"\t"+"Class: "+pr+"\t"+title);
                 inputLine = input.nextLine();
                 if(inputLine.toLowerCase().contains("exit")) 
                     break;   
             }
         }
+    }
+    private static String getTitle(Statement s, int i) throws SQLException{
+    	ResultSet rs = s.executeQuery("SELECT title FROM Patents WHERE idx = " + (i + 1));
+		rs.first();
+		return rs.getString("title");
     }
 }

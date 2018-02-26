@@ -53,8 +53,8 @@ public class Classifier {
 		Set<String> keys = dict.keySet();
 		for (String k : keys) {
 			DocWord entry = dict.get(k);
-			entry.yesFrac = entry.yesCnt / yesDBList.size(); // avg freq per doc type
-			entry.noFrac = entry.noCnt / noDBList.size();
+			entry.yesFrac = (double)entry.yesCnt / yesDBList.size(); // avg freq per doc type
+			entry.noFrac = (double)entry.noCnt / noDBList.size();
 			entry.yesProb = entry.yesFrac / (entry.yesFrac + entry.noFrac);
 			if (entry.yesProb < 0.01)
 				entry.yesProb = 0.01D;
@@ -71,16 +71,24 @@ public class Classifier {
 			// add it
 			DocWord entry = new DocWord();
 			entry.word = token;
-			entry.yesCnt = 0;
-			entry.noCnt = 0;
+			if (patType == true){
+				entry.yesCnt = 1;
+				entry.noCnt = 0;
+			}
+			if (patType == false){
+				entry.noCnt = 1;
+				entry.yesCnt = 0;
+			}
 			dict.put(token, entry);
 		}
-		DocWord entry = dict.get(token);
-		if (patType == true)
-			entry.yesCnt++;
-		else
-			entry.noCnt++;
-		dict.replace(token, entry);
+		else{
+			DocWord entry = dict.get(token);
+			if (patType == true)
+				entry.yesCnt++;
+			else
+				entry.noCnt++;
+			dict.replace(token, entry);
+		}
 	}
 
 	public double classify(String p) throws Exception {
@@ -88,18 +96,18 @@ public class Classifier {
 		ArrayList<DocWord> words = new ArrayList<DocWord>();// words in new
 															// patent we are
 															// classifying
-		String[] tokens = tokenizeText(p);
-		for (int i = 0; i < tokens.length; i++) {
-			if (dict.containsKey(tokens[i]) && !tset.contains(tokens[i])) {
+		List<String> tokens = tokenizeText(p);
+		for (String t : tokens) {
+			if (dict.containsKey(t)) {
 				// the token is in the dictionary and this is 1st time we have
 				// seen it in the patent
-				tset.add(tokens[i]); // remember that we have seen this word
-				words.add(dict.get(tokens[i]));
+				tset.add(t); // remember that we have seen this word
+				words.add(dict.get(t));
 			}
 			// else //it is an unknown word (not in dict) so just skip it for
 			// now
 		}
-		System.out.println("Patent word count: " + words.size());
+		System.out.println("Words from the title that we can use for classification: " + words.size());
 		// determine yes or no according to:
 		// http://www.paulgraham.com/naivebayes.html
 		double yesProduct = 1.0D;
@@ -109,16 +117,16 @@ public class Classifier {
 			noProduct *= dw.noProb;
 		}
 		if (Double.isNaN(yesProduct))
-			throw new Exception();
+			throw new Exception("You're using a word in classification that we haven't seen in training.");
 		if (Double.isNaN(noProduct))
-			throw new Exception();
+			throw new Exception("You're using a word in classification that we haven't seen in training.");
 		double yesProb = yesProduct / (yesProduct + noProduct);
 		if (Double.isNaN(yesProb))
 			throw new Exception();
 		return yesProb;
 	}
 
-	private String[] tokenizeText(String content) {
+	private List<String> tokenizeText(String content) {
 		content = content.replace('.', ' ').toLowerCase().trim(); // take out
 																	// periods
 																	// which
@@ -140,6 +148,6 @@ public class Classifier {
 				words.add(token);
 			}
 		}
-		return (String[]) words.toArray();
+		return words;
 	}
 }
