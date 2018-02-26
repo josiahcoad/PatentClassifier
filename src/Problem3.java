@@ -79,6 +79,49 @@ public class Problem3 {
 		}
 		System.out.println("Thats all the tables in " + dbname + ".");
 	}
+
+	public static void insertPatentIntoDB(Connection conn, Patent p) throws SQLException{
+		String query;
+		conn.setAutoCommit(false);
+		try{
+			Statement s = conn.createStatement();
+			query = String.format("INSERT INTO"
+					+ " Patents(patNum, iDate, title, familyID, applNum, dateFiled, docID, pubDate, USclass, examiner, legalfirm)"
+					+ " VALUES('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s')",
+					p.getPatNum(), p.getIDate(), p.getTitle().replaceAll("'", "''"), p.getFamilyID(), p.getApplNum(), p.getDateFiled(), 
+					p.getDocID(), p.getPubDate(), p.getUSclass(), p.getExaminer().replaceAll("'", "''"), p.getLegalfirm().replaceAll("'", "''"));
+			s.executeUpdate(query);					
+			query = String.format("INSERT INTO Abstracts(patNum, abstract) VALUES('%s', '%s')", p.getPatNum(), p.getAbstract().replaceAll("'", "''"));
+			s.executeUpdate(query);
+			query = String.format("INSERT INTO Descriptions(patNum, description) VALUES('%s', '%s')", p.getPatNum(), p.getDescription().replaceAll("'", "''"));
+			s.executeUpdate(query);
+			query = String.format("INSERT INTO Summaries(patNum, summary) VALUES('%s', '%s')", p.getPatNum(), p.getSummary().replaceAll("'", "''"));
+			s.executeUpdate(query);
+
+			for (String claim : p.getClaims()){
+				int claimNum = Integer.parseInt(claim.split(". ")[0]);
+				query = String.format("INSERT INTO Claims(patNum, claimnum, claim) VALUES('%s', '%s', '%s')", p.getPatNum(), claimNum, claim.replaceAll("'", "''"));
+				s.executeUpdate(query);
+			}
+			
+			for (String ref : p.getReferences()){
+				query = String.format("INSERT INTO PatentDB.References(patNum, reference) VALUES('%s', '%s')", p.getPatNum(), ref.replaceAll("'", "''"));
+				s.executeUpdate(query);
+			}
+	
+			for (String inventor : p.getInventors()){
+				query = String.format("INSERT INTO Inventors(patNum, inventor, assignee) VALUES('%s', '%s', '%s')", p.getPatNum(), inventor.replaceAll("'", "''"), p.getAssignee().replaceAll("'", "''"));
+				s.executeUpdate(query);		
+					query = String.format("INSERT INTO Assignees(patNum, assignee, inventor) VALUES('%s', '%s', '%s')", p.getPatNum(), p.getAssignee().replaceAll("'", "''"), inventor.replaceAll("'", "''"));
+					s.executeUpdate(query);		
+			}
+			conn.commit();
+		}
+		catch (SQLException e){
+			System.out.println("Patents insertion unsuccessful. " + e.getMessage());
+		}
+		conn.setAutoCommit(true);
+	}
 	
     public static void main(String[] args) throws ClassNotFoundException{
     	Connection conn = null;
@@ -92,12 +135,21 @@ public class Problem3 {
 
     		// print out tables before insetions
     		List<String> tables = Arrays.asList("Abstracts", "Claims", "References", "Descriptions", "Summaries", "Patents", "Assignees", "Inventors");
-    		System.out.println("Before the insertions...");
-    		printTables(conn, tables, "PatentDb");
+//    		System.out.println("Before the insertions...");
+//    		printTables(conn, tables, "PatentDb");
     		
     		// read the JSON file using Jackson
     		ArrayList<Patent> patents = PatentReader.ReadPatentJSON();
-			System.out.println(patents.get(0).getReferences().get(0));
+   
+//    		insert JSON records into the DB
+    		for (int i = 1; i < patents.size(); i++){
+    			insertPatentIntoDB(conn, patents.get(i));
+			}
+    		
+    		// print results
+    		System.out.println("After the insertions...");
+    		printTables(conn, tables, "PatentDb");
+
     		
     	}
 		catch(SQLException e) {

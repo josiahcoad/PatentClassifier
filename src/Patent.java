@@ -203,15 +203,16 @@ public class Patent {
 
     @SuppressWarnings("unchecked")
     @JsonProperty("references")
-    public List<Triplet<String,String,String>> getReferences() {
+    public List<String> getReferences() {
 		Collection<Object> refvalues = references.getAdditionalProperties().values();
 		List<String> reflist = (List<String>) (List<?>) Arrays.asList(refvalues.toArray());
-		List<Triplet<String,String,String>> reftriplets = new ArrayList<Triplet<String,String,String>>();
-        for (String ref : reflist){
-        	String[] resplit = ref.split(";");
-        	reftriplets.add(Triplet.with(resplit[0], resplit[1], resplit[2])); 
-        }
-        return reftriplets;
+		return reflist;
+//		List<Triplet<String,String,String>> reftriplets = new ArrayList<Triplet<String,String,String>>();
+//        for (String ref : reflist){
+//        	String[] resplit = ref.split(";");
+//        	reftriplets.add(Triplet.with(resplit[0], resplit[1], resplit[2])); 
+//        }
+//        return reftriplets;
     }
     
     @JsonProperty("references")
