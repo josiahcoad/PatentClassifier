@@ -134,21 +134,42 @@ public class Problem3 {
     		}
 
     		// print out tables before insetions
-    		List<String> tables = Arrays.asList("Abstracts", "Claims", "References", "Descriptions", "Summaries", "Patents", "Assignees", "Inventors");
-//    		System.out.println("Before the insertions...");
-//    		printTables(conn, tables, "PatentDb");
+    		List<String> tables = Arrays.asList("Abstracts", "Claims", "patentDB.References", "Descriptions", "Summaries", "Assignees", "Inventors", "Patents");
+
+    		for (String t : tables){
+    			Statement s = conn.createStatement();    		
+        		s.executeUpdate("DELETE FROM " + t);
+    		}
+
+    		System.out.println("Before the insertions...");
+    		for (String t : tables){
+    			Statement s = conn.createStatement();    		
+        		ResultSet rs = s.executeQuery("SELECT * FROM " + t);
+        		rs.last();
+        		System.out.println("Number of rows in " + t + ": " + rs.getRow());
+        		rs.beforeFirst();
+    		}
     		
     		// read the JSON file using Jackson
+    		System.out.println();
     		ArrayList<Patent> patents = PatentReader.ReadPatentJSON();
    
-//    		insert JSON records into the DB
-    		for (int i = 1; i < patents.size(); i++){
+    		//insert JSON records into the DB
+    		System.out.println("\nNow inserting into DB...");
+    		for (int i = 0; i < patents.size(); i++){
     			insertPatentIntoDB(conn, patents.get(i));
 			}
     		
     		// print results
+    		System.out.println();
     		System.out.println("After the insertions...");
-    		printTables(conn, tables, "PatentDb");
+    		for (String t : tables){
+    			Statement s = conn.createStatement();		
+        		ResultSet rs = s.executeQuery("SELECT * FROM " + t);
+        		rs.last();
+        		System.out.println("Number of rows in " + t + ": " + rs.getRow());
+        		rs.beforeFirst();
+    		}
 
     		
     	}
