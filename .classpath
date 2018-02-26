@@ -7,6 +7,6 @@
 	<classpathentry kind="lib" path="jackson-all-1.9.0.jar"/>
 	<classpathentry kind="lib" path="jackson-annotations-2.9.0.jar"/>
 	<classpathentry kind="lib" path="javatuples-1.2.jar"/>
-	<classpathentry kind="lib" path="/jdbcderby/mariadb-java-client-1.4.6.jar"/>
+	<classpathentry kind="lib" path="mariadb-java-client-1.4.6.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
